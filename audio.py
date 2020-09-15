@@ -5,6 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from adjustText import adjust_text
 
+def close(l, v):
+
+    for e in l:
+        if 0.90 * e <= v and 1.10 * e >= v:
+            return True
+
+    return False
+
+
 def better_fit(vector, scalar):
 
     min_diff = np.inf
@@ -61,10 +70,15 @@ for record in records:
     sorted_peak_values = [[x, y] for y, x in sorted(zip(peak_values, peaks), key=lambda pair: pair[0], reverse=True)]
 
     texts = []
+    positions = []
     for i in range(len(sorted_peak_values)):
         peak_position = sorted_peak_values[i][0]
 
         if xf[peak_position] > 0:
+
+            if not close(positions, xf[peak_position]):
+                positions.append(xf[peak_position])
+
             texts.append(plt.text(xf[peak_position], yplot[peak_position], "{:.2f}".format(xf[peak_position]), fontsize=8))
 
     plt.grid()
@@ -72,15 +86,18 @@ for record in records:
     plt.savefig(record[:-4] + ".png")
     plt.close()
 
-    max_peak_position = sorted_peak_values[0][0]
-    max_peak_frequency = xf[max_peak_position]
+    #max_peak_position = sorted_peak_values[0][0]
+    #max_peak_frequency = xf[max_peak_position]
 
-    freq = better_fit(list(strings.values()), max_peak_frequency)
+    #freq = better_fit(list(strings.values()), max_peak_frequency)
+    positions = positions[:3]
+    positions.sort()
+    harmonic_frequency = np.mean(np.diff(positions))
+    freq = better_fit(list(strings.values()), harmonic_frequency)
 
     for key in strings.keys():
         if freq == strings[key]:
             print(record, key, strings[key])
 
 
-
-
+    
