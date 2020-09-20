@@ -5,6 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from adjustText import adjust_text
 
+
+# Input:
+# l: list of values
+# v: test value
+
+# Output
+# returns true if and only if there exists values on l that are close
+# to v. The close definition is based in a 10% distance.
 def close(l, v):
 
     for e in l:
@@ -13,7 +21,12 @@ def close(l, v):
 
     return False
 
+# Input:
+# vector: list of values
+# scalar: test value
 
+# Output
+# returns the element from vector that's closest to scalar using the L2 norm.
 def better_fit(vector, scalar):
 
     min_diff = np.inf
@@ -43,7 +56,7 @@ records = ['string_1.wav', 'string_2.wav', 'string_3.wav']
 
 strings = {"E1":329.63, "B2":246.94, "G3":196.00, "D4":146.83, "A5":110.00, "E6":82.41}
 
-for record in records: 
+for record in records: # one file at a time 
     samplerate, data = wavfile.read(record)
 
     N = len(data)
@@ -55,6 +68,8 @@ for record in records:
 
     size = len(xf)
 
+    # To better visualize the output, only low frequencies are seen
+    # because that's the domain of guitar strings, usually.
     start = int(9*size/20)
     end = int(11*size/20) 
 
@@ -64,11 +79,14 @@ for record in records:
     yplot = 1.0/N * np.abs(yplot)
     plt.plot(xf, yplot)
 
+    # Get the peaks values, where a peak is defined as a value above 20
     peaks, _ = find_peaks(yplot, height=20)
     peak_values = [yplot[peak] for peak in peaks]
 
+    # Sort peaks use their heights
     sorted_peak_values = [[x, y] for y, x in sorted(zip(peak_values, peaks), key=lambda pair: pair[0], reverse=True)]
 
+    # This part is only to annotate the plot and make it easier to visualize
     texts = []
     positions = []
     for i in range(len(sorted_peak_values)):
@@ -81,23 +99,26 @@ for record in records:
 
             texts.append(plt.text(xf[peak_position], yplot[peak_position], "{:.2f}".format(xf[peak_position]), fontsize=8))
 
+    # Plot
     plt.grid()
     adjust_text(texts, only_move={'points':'y', 'texts':'y'}, arrowprops=dict(arrowstyle="->", color='r', lw=0.5))
     plt.savefig(record[:-4] + ".png")
     plt.close()
 
+    
+    # These three commenteds lines show one approach to get the fundamental frequency
+    # that's to use the highest peak value
     #max_peak_position = sorted_peak_values[0][0]
     #max_peak_frequency = xf[max_peak_position]
-
     #freq = better_fit(list(strings.values()), max_peak_frequency)
+
+    # However, we found it was better to use the average of distance between the first three peaks
+    # as the fundamental frequency
     positions = positions[:3]
     positions.sort()
-    harmonic_frequency = np.mean(np.diff(positions))
-    freq = better_fit(list(strings.values()), harmonic_frequency)
+    fundamental_frequency = np.mean(np.diff(positions))
+    freq = better_fit(list(strings.values()), fundamental_frequency)
 
     for key in strings.keys():
         if freq == strings[key]:
             print(record, key, strings[key])
-
-
-    
