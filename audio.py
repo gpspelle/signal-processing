@@ -8,23 +8,25 @@ from adjustText import adjust_text
 
 # Input:
 # d: dictionary containing central value of a list of values. The key of d is the average of the values that this key holds.
-# v: test value
+# x: fft x coordinate (frequency)
+# y: fft y coordinate (amplitude)
 
 # Output
 # No output
-def close(d, v):
+def close(d, x, y):
 
     already_belongs = False
     for peak_average in d.keys():
-        if 0.90 * peak_average <= v and 1.10 * peak_average >= v: # check if element is close on this neighborhood
+        if 0.90 * peak_average <= x and 1.10 * peak_average >= x: # check if element is close on this neighborhood
             already_belongs = True
-            d[peak_average].append(v) # add new value to a list of neighbors
+            d[peak_average][0].append(x) # add new value to a list of neighbors
+            d[peak_average][1].append(y) # add new value to a list of neighbors
             pop_val = d.pop(peak_average)
-            d[np.mean(pop_val)] = pop_val # recreate a new list on the dictionary with its updated value
+            d[np.average(pop_val[0], weights=pop_val[1])] = pop_val # recreate a new list on the dictionary with its updated value (weighted average)
             break
 
     if not already_belongs:
-        d[v] = [v]
+        d[x] = [[x], [y]]
 
 
 # Input:
@@ -61,6 +63,7 @@ records = ['string_1.wav', 'string_2.wav', 'string_3.wav']
 #    E6: 82.41 Hz
 
 strings = {"E1":329.63, "B2":246.94, "G3":196.00, "D4":146.83, "A5":110.00, "E6":82.41}
+cents_accuracy = {"E1":0.15, "B2":0.15, "G3":0.15, "D4":0.08, "A5":0.08, "E6":0.04} 
 
 for record in records: # one file at a time 
     samplerate, data = wavfile.read(record)
@@ -99,7 +102,7 @@ for record in records: # one file at a time
         peak_position = sorted_peak_values[i][0]
 
         if xf[peak_position] > 0:
-            close(positions, xf[peak_position])
+            close(positions, xf[peak_position], yplot[peak_position])
             texts.append(plt.text(xf[peak_position], yplot[peak_position], "{:.2f}".format(xf[peak_position]), fontsize=8))
 
     # Plot
@@ -123,4 +126,7 @@ for record in records: # one file at a time
 
     for key in strings.keys():
         if freq == strings[key]:
-            print(record, key, strings[key], fundamental_frequency)
+            c = cents_accuracy[key]
+            diff = fundamental_frequency - strings[key]
+            
+            print(record, key, strings[key], fundamental_frequency, diff / c)
